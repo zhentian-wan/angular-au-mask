@@ -3,7 +3,7 @@ import {Directive, ElementRef, HostListener, Input, OnInit} from '@angular/core'
 import * as includes from 'lodash.includes';
 import * as findLastIndex from 'lodash.findlastindex';
 import * as findIndex from 'lodash.findIndex';
-import {SPECIAL_CHARACTERS, TAB, overWriteCharAtPosition, LEFT_ARROW, RIGHT_ARROW} from './mask.utils';
+import {SPECIAL_CHARACTERS, TAB, overWriteCharAtPosition, LEFT_ARROW, RIGHT_ARROW, BACKSPACE, DELETE} from './mask.utils';
 import {digitValidators, neverValidator} from './digit_validation';
 
 @Directive({
@@ -42,6 +42,12 @@ export class AuMaskDirective implements OnInit {
       case RIGHT_ARROW:
         this.handleRightArrow(cursorPos);
         return;
+      case BACKSPACE:
+        this.handleBackSpace(cursorPos);
+        return;
+      case DELETE:
+        this.handleDelete(cursorPos);
+        return;
     }
 
     const maskDigit = this.mask.charAt(cursorPos);
@@ -52,9 +58,33 @@ export class AuMaskDirective implements OnInit {
     }
   }
 
-  handleRightArrow(cursorPos) {
+  handleDelete(cursorPos) {
+    overWriteCharAtPosition(this.input, '_', cursorPos);
+    this.input.setSelectionRange(cursorPos, cursorPos);
+  }
+
+  handleBackSpace(cursorPos) {
+    const previousPos = this.calculatePreviousCursorPos(cursorPos);
+    if (previousPos > -1) {
+      overWriteCharAtPosition(this.input, '_', previousPos);
+      this.input.setSelectionRange(previousPos, previousPos);
+    }
+  }
+
+  calculateNextCursorPos(cursorPos) {
     const valueBeforeCursor = this.input.value.slice(cursorPos + 1);
     const nextPos = findIndex(valueBeforeCursor, (char) => !includes(SPECIAL_CHARACTERS, char));
+    return nextPos;
+  }
+
+  calculatePreviousCursorPos(cursorPos) {
+    const valueBeforeCursor = this.input.value.slice(0, cursorPos);
+    const previousPos = findLastIndex(valueBeforeCursor, (char) => !includes(SPECIAL_CHARACTERS, char));
+    return previousPos;
+  }
+
+  handleRightArrow(cursorPos) {
+    const nextPos = this.calculateNextCursorPos(cursorPos);
     if(nextPos > -1) {
       const newNextPos = cursorPos + nextPos + 1;
       this.input.setSelectionRange(newNextPos, newNextPos);
@@ -62,8 +92,7 @@ export class AuMaskDirective implements OnInit {
   }
 
   handleLeftArrow(cursorPos) {
-    const valueAfterCursor = this.input.value.slice(0, cursorPos);
-    const previousPos = findLastIndex(valueAfterCursor, (char) => !includes(SPECIAL_CHARACTERS, char));
+    const previousPos = this.calculatePreviousCursorPos(cursorPos);
     if(previousPos > -1) {
       this.input.setSelectionRange(previousPos, previousPos);
     }
