@@ -4,7 +4,7 @@ import * as includes from 'lodash.includes';
 import * as findLastIndex from 'lodash.findlastindex';
 import * as findIndex from 'lodash.findIndex';
 import {SPECIAL_CHARACTERS, TAB, overWriteCharAtPosition, LEFT_ARROW, RIGHT_ARROW} from './mask.utils';
-import {digitValidators} from './digit_validation';
+import {digitValidators, neverValidator} from './digit_validation';
 
 @Directive({
   selector: '[au-mask]'
@@ -45,7 +45,7 @@ export class AuMaskDirective implements OnInit {
     }
 
     const maskDigit = this.mask.charAt(cursorPos);
-    const digitValidator = digitValidators[maskDigit];
+    const digitValidator = digitValidators[maskDigit] || neverValidator;
     if (digitValidator(val)) {
       overWriteCharAtPosition(this.input, val, cursorPos);
       this.handleRightArrow(cursorPos);
