@@ -14,6 +14,7 @@ export class AuMaskDirective implements OnInit {
   @Input('au-mask') mask = '';
 
   input: HTMLInputElement;
+  fullFieldSelected = false;
 
   ngOnInit() {
     this.input.value = this.buildPlaceHolder();
@@ -23,8 +24,20 @@ export class AuMaskDirective implements OnInit {
     this.input = el.nativeElement;
   }
 
+  @HostListener('select', ['$event'])
+  onSelect($event: UIEvent) {
+    this.fullFieldSelected = this.input.selectionStart === 0
+      && this.input.selectionEnd === this.input.value.length;
+  }
+
   @HostListener('keydown', ['$event', '$event.keyCode'])
   onKeyDown($event: KeyboardEvent, keyCode) {
+
+    // if user trying to do copy & paste, then we don't want to
+    // overwrite the value
+    if ($event.metaKey || $event.ctrlKey) {
+      return;
+    }
 
     if(keyCode !== TAB) {
       $event.preventDefault();
@@ -34,6 +47,13 @@ export class AuMaskDirective implements OnInit {
     const val = String.fromCharCode(keyCode);
     // get position
     const cursorPos = this.input.selectionStart;
+
+    // Select the whole field
+    if (this.fullFieldSelected) {
+      this.input.value = this.buildPlaceHolder();
+      const firstPlaceHolderPos = findIndex(this.input.value, (char) => char === '_');
+      this.input.setSelectionRange(firstPlaceHolderPos, firstPlaceHolderPos);
+    }
 
     switch(keyCode) {
       case LEFT_ARROW:
